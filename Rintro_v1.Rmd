@@ -1,0 +1,833 @@
+---
+title: "R Introduction"
+author: "István Ilyés"
+date: '2019 08 28 '
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Short R Intro
+========================================================
+
+
+## Introduction
+
+### What is R?
+
+* R is a programming language for statistical computation (developed based on the S language)
+* R 1.0.0 was released in 2000, the current version is R 3.6.1 released in July 2019.
+
+### Advantages of R
+* Free and open source
+* Very active user community, frequent contributions from users
+  + It is easy to find a solution on the internet
+* New methodologies/algorithms are available quite fastly (often developed in R first)
+* It is very useful for interactive data exploring and ad hoc modeling
+* Very good visualization capabilities
+* It can be programmed, users are able to create customized solutions
+
+### Drawbacks of R
+* It is harder to learn it first, less user friendly than Stata/Matlab etc.
+* Objects (for example data) need to be stored in physical memory 
+  + It can slow down the processing and hard to handle large datasets
+* No commercial support, you need to figure out yourself what went wrong
+
+### R system
+1. There is a base R system which you can download from CRAN
+2. Additional packages created by users (more than 14 000)
+
+### Resources
+
+#### Tools related to R:
+* https://cran.r-project.org/
+* https://www.rstudio.com/
+* https://shiny.rstudio.com/
+* http://slidify.org/
+
+
+#### Troubleshooting, blogs, communities:
+* https://www.r-bloggers.com/
+* https://stackoverflow.com/
+* https://stats.stackexchange.com/
+
+
+#### Books
+* https://www.r-project.org/doc/bib/R-books.html
+* http://www.cookbook-r.com/
+* http://www.cookbook-r.com/Graphs/
+* http://adv-r.had.co.nz/
+
+
+
+#### Other tools
+* https://notepad-plus-plus.org/
+* https://github.com/
+
+
+R training
+========================================================
+
+## R as a calculator
+
+
+```{r}
+3+8
+```
+
+
+
+## Objects
+
+#### All things in R are objects 
+
+
+
+
+```{r}
+a <- 1
+b <- 2
+c <- 3
+
+ls()  		#Printing out object names
+```
+
+
+
+```{r}
+rm(a,b)  	#Remove specific objects
+
+rm(list=ls()) #Remove all objects
+```
+
+
+
+
+## Data types in R
+
+#### Vectors:
+##### Several elements of a single atomic type: numeric, integer, complex, boolean, string (R does not have scalars, they are 1-element vectors)
+
+```{r}
+a <- c(1,3,6.2,6,-2,10) # numeric vector
+b <- c("aaa","bbb","ccc") # character vector
+c <- c(TRUE,FALSE,TRUE,FALSE,TRUE,FALSE) #logical vector
+
+a[c(3,5)] #3rd and 5th elements of a vector, indexing
+```
+
+
+#### Matrices:
+##### Collections of equal-length vectors
+
+```{r}
+y<-matrix(1:20, nrow=5,ncol=4)
+
+y[,3] # 3rd column of matrix
+```
+
+
+```{r}
+y[3,] # 3rd row of matrix 
+```
+
+
+```{r}
+y[2:3,1:3] # rows 2,3,4 of columns 1,2,3
+```
+
+
+
+#### Lists:
+##### Collections of unequal-length vectors of different types
+
+```{r}
+list1 <- list(name="Fred", mynumbers=y, mymatrix=a, age=5.3)
+list2 <- list(name="David", mynumbers2=b, mymatrix2=c, age2=10)
+
+v <- c(list1,list2) # example of a list containing two lists 
+list1[[2]] # 2nd component of the list
+```
+
+
+
+```{r}
+list1[["mynumbers"]] # component named mynumbers in list
+```
+
+
+#### Factors:
+##### Categorical data (ordered, unordered)
+
+```{r}
+gender <- c(rep("male",20), rep("female", 30)) 
+gender <- factor(gender) 
+# stores gender as 20 1s and 30 2s and associates
+# 1=female, 2=male internally (alphabetically)
+# R now treats gender as a nominal variable 
+summary(gender)
+```
+
+
+
+#### Data frames:
+##### Data set, collections of equal-length vectors of different types
+
+```{r}
+d <- c(1,2,3,4)
+e <- c("red", "white", "red", NA)
+f <- c(TRUE,TRUE,TRUE,FALSE)
+mydata <- data.frame(d,e,f)
+names(mydata) <- c("ID","Color","Passed") # variable names
+
+mydata[,2:3] # columns 2,3,4 of data frame
+```
+
+
+```{r}
+mydata[c("ID","Color")] # columns ID and Age from data frame
+```
+
+
+
+```{r}
+mydata$ID # variable x1 in the data frame
+```
+
+
+## Setting the working directory
+
+```{r}
+getwd() #which directory I am in?
+```
+
+```{r}
+dir()   #what's in that directory?
+```
+
+```{r}
+#Windows
+setwd("C:/M/Education/Öko/Rajk kurzus/1.félév/r_intro")  #set working directory to "..."
+```
+
+
+## Loading and saving data
+
+#### Built-in data:
+
+```{r}
+data() #R has built in datasets. Check them out:
+
+data(mtcars) #loading a specific built-in dataset
+```
+
+
+#### Other sources:
+
+```{r}
+?read.csv
+```
+
+
+```{r}
+?read.table
+```
+
+#### Loading Stata files:
+
+
+```{r}
+#install.packages("foreign") #install packages from CRAN
+library(foreign) #load package in
+
+download.file('http://fmwww.bc.edu/ec-p/data/wooldridge/affairs.dta','affairs.dta',mode='wb')
+
+affairs_full <- read.dta('affairs.dta')
+```
+
+
+#### Saving data
+
+
+```{r}
+#CSV
+write.csv(affairs_full,"affairs_full.csv")
+
+#RData
+save(affairs_full, file = "affairs.RData")
+
+#Loading back RData
+load(file = "affairs.RData")
+```
+
+
+## What's in our data: basic exploring
+
+
+```{r}
+str(affairs_full)
+```
+
+
+```{r}
+head(affairs_full,5)
+```
+
+```{r}
+tail(affairs_full,5)
+```
+
+
+```{r}
+#fix(affairs_full)
+```
+
+
+## Keeping, dropping columns, rows
+
+#### R has powerful indexing features for accessing object elements. 
+#### These features can be used to select and exclude variables and observations.
+
+
+
+```{r}
+affairs1 <- affairs_full[,1:9] #Keep columns from 1st to 9th
+head(affairs1,5)
+```
+
+
+
+```{r}
+affairs2 <- affairs_full[,c(1,10)] #Keep columns from 1st to 9th
+head(affairs2,5)
+```
+
+
+
+```{r}
+affairs2 <- affairs_full[,c("id","naffairs")] #Keep the id column and number of affairs
+head(affairs2,5)
+```
+
+
+```{r}
+affairs_full[,"naffairs"] #Keep number of affairs column
+```
+
+
+
+```{r}
+affairs_junk <- affairs_full[1:10,1:2] #Keep the first 10 rows and first 2 columns
+
+
+#Conditional
+affairs_junk <- affairs_full[(affairs_full$relig <= 3 & affairs_full$occup >=2),]  #conditional subsetting with and condition
+head(affairs_full[(affairs_full$relig <= 3 | affairs_full$occup >=2),],5)  #conditional subsetting with or condition
+```
+
+
+
+```{r}
+head(affairs_full[which(affairs_full$relig <= 3),],5) #which function stores the indices where the statement is true
+```
+
+```{r}
+head(subset(affairs_full, relig <= 3 | occup >=2, select=c(id, ratemarr)),5) #subset function is the easiest way
+```
+
+
+## Duplicated values
+
+
+```{r}
+affairs_full[duplicated(affairs_full),]
+```
+
+
+```{r}
+#affairs_full <- affairs_full[!duplicated(affairs_full),]
+```
+
+
+## Joining datasets
+
+
+
+```{r}
+affairs_small <- rbind(head(affairs_full,20),affairs_full[120:142,]) #append datasets
+
+affairs_m0 <- cbind(affairs1,affairs2) #simple join
+
+affairs_m <- merge(affairs1,affairs2,by.x = "id", by.y = "id") 
+```
+
+
+
+
+## Manupulating variables
+
+
+### Creating new variables
+
+```{r}
+affairs_m$ln_age=log(affairs_m$age)
+```
+
+
+### Creating new variables with aggregation
+```{r}
+#Aggregation
+avg_affairs <-aggregate(affairs_m$naffairs, by=list(affairs_m$occup), FUN=mean, na.rm=TRUE)
+avg_affairs
+```
+
+
+
+```{r}
+sum_affairs <-aggregate(affairs_m$naffairs, by=list(affairs_m$occup), FUN=sum, na.rm=TRUE)
+sum_affairs
+```
+
+
+```{r}
+affairs_m$avg_affairs <- ave(affairs_m$naffairs, affairs_m$occup)
+head(affairs_m,10)
+```
+
+
+#### If we want to add several type of aggregated variables to the dataset, it is recommended to use the data.table package. It also has other benefits, see [here](https://www.r-bloggers.com/intro-to-the-data-table-package/)
+
+
+### Creating category variable
+
+```{r}
+#attach(affairs_m)
+#detach(affairs_m)
+
+affairs_m$relig2[affairs_m$relig==1] <- 5
+affairs_m$relig2[affairs_m$relig==2] <- 4
+affairs_m$relig2[affairs_m$relig==3] <- 3
+affairs_m$relig2[affairs_m$relig==4] <- 2
+affairs_m$relig2[affairs_m$relig==5] <- 1
+
+
+# Using ifelse statements like excel's if function
+affairs_m$relig3 <- ifelse(affairs_m$relig>=4,"Strongly religous",ifelse(affairs_m$relig==3,"Slightly religous","Not religous"))
+
+# Creating factor from continuous variable
+affairs_m$age2 <- cut(affairs_m$age,breaks=c(10,30,40,50,60))
+
+head(affairs_m,10)
+```
+
+
+
+## If statement
+
+
+```{r}
+x <- c("what","is","truth")
+
+if("Truth" %in% x) {
+   print("Truth is found")
+} else {
+   print("Truth is not found")
+}
+```
+
+
+## Creating dummy variables
+#### For every unique value in the string column, create a new 1/0 column
+#This is what Factors do "under-the-hood" automatically when passed to function requiring numeric data
+
+
+```{r}
+for(level in unique(affairs_m$occup)){
+  affairs_m[paste("dummy", level, sep = "_")] <- ifelse(affairs_m$occup == level, 1, 0)
+}
+head(affairs_m,5)
+```
+
+
+
+
+## Loops
+
+
+#### It is automating a multi-step process by organizing sequences of actions.
+#### Every time some operation(s) has to be repeated, a loop may come in handy.
+
+
+
+
+```{r}
+x <- c("A","B","C")
+
+for(letter in x) {
+  print(letter)
+}
+```
+
+
+## Faster loops in R
+
+### Apply
+
+```{r}
+###Apply row-wise
+apply(affairs_m["ratemarr"], 1, mean)
+```
+
+
+```{r}
+###Apply col-wise
+apply(affairs_m["ratemarr"], 2, mean)
+```
+
+
+```{r}
+#We customize functions
+apply(affairs_m["ratemarr"], 2, function(x) length(x[x<=2]))
+```
+
+
+### Lapply, sapply
+
+##### we want to go through on a vector: apply a function on all points (we can do this also on list)
+
+
+```{r}
+#sapply will return a vector
+head(sapply(affairs_m["ratemarr"], function(x) x^2),5)
+```
+
+
+
+```{r}
+affairs_m$ratemarr_sq1 <- sapply(affairs_m["ratemarr"], function(x) x^2)
+
+#lapply will return a list
+head(lapply(affairs_m["ratemarr"], function(x) x^2),5)
+```
+
+
+```{r}
+affairs_m$ratemarr_sq2 <- lapply(affairs_m["ratemarr"], function(x) x^2)
+
+
+#but we can get a list also with sapply
+sapply(1:3, function(x) x^2, simplify=FALSE)
+```
+
+
+```{r}
+#or we can get a vector also with lapply
+unlist(lapply(1:3, function(x) x^2))
+```
+
+
+
+## Other data manipulation
+
+
+
+```{r}
+#Get column names
+names(affairs_m) #This is a character vector
+```
+
+
+```{r}
+data.frame("Names"=names(affairs_m)) #This is a data frame, nicer format, but occupy bigger space
+```
+
+
+```{r}
+#Get the number of columns and rows
+ncol(affairs_m)
+```
+
+
+```{r}
+nrow(affairs_m)
+```
+
+```{r}
+#sorting: ascending, descending
+head(sort(affairs_m$age),5)                     #basic sortin
+```
+
+
+
+```{r}
+head(sort(affairs_m$age, decreasing=TRUE),5)    #sorting decreasing
+```
+
+
+```{r}
+head(sort(affairs_m$age, na.last=TRUE),5)       #put missing values to the end
+```
+
+
+```{r}
+head(affairs_m[order(affairs_m$age),1:(ncol(affairs_m)-1)],5)        #order all data frame according to var 1
+```
+
+
+```{r}
+head(affairs_m[order(affairs_m$age, affairs_m$relig),1:(ncol(affairs_m)-1)],5)    #ordering with more variables
+```
+
+
+
+
+## Descriptive statistics
+
+
+### Missing values
+
+#### Cross tabulation, contingency tables 
+
+```{r}
+table(affairs_m$relig,affairs_m$ratemarr) 
+```
+
+
+```{r}
+table(affairs_m$relig, useNA="ifany")  #table including missing values
+```
+
+
+```{r}
+table(affairs_m$relig,affairs_m$ratemarr,dnn=c("Religion","Rate of marriage")) 
+```
+
+
+```{r}
+table(affairs_m$relig,affairs_m$ratemarr,dnn=c("Religion","Rate of marriage"))/nrow(affairs_m) #relative frequency
+```
+
+
+
+```{r}
+xt <- xtabs( ~ ratemarr+relig, data=affairs_m)  #Frequency by gender and admission
+xt 
+```
+
+
+
+
+
+
+### Summarizing data set 
+
+
+```{r}
+head(summary(affairs_m),5) #all variables
+```
+
+
+```{r}
+summary(affairs_m$age) #specific variable
+```
+
+### Other statistics
+
+
+```{r}
+mean(affairs_m$age) #mean of age
+```
+
+
+```{r}
+var(affairs_m$age) #variance of age
+```
+
+
+```{r}
+quantile(affairs_m$age, na.rm=TRUE)
+```
+
+
+```{r}
+quantile(affairs_m$age, probs=c(0.25,0.5, 0.75), na.rm=TRUE)
+```
+
+
+```{r}
+cov(affairs_m$naffairs,affairs_m$age)
+```
+
+
+```{r}
+cor(affairs_m$naffairs,affairs_m$age)
+```
+
+
+```{r}
+cor.test(affairs_m$naffairs,affairs_m$age)
+```
+
+
+
+```{r}
+cor.test(affairs_m$naffairs,affairs_m$age)[[1]] #get t statistics of the test
+```
+
+
+```{r}
+cor.test(affairs_m$naffairs,affairs_m$age)[[3]] #get p value of the test
+```
+
+Visualisations 
+=====================================
+
+## Base R
+
+### Histogram
+
+```{r}
+hist(affairs_m$age)
+```
+
+```{r}
+with(affairs_m, hist(age))
+```
+
+
+
+### Scatterplot
+
+```{r}
+plot(affairs_m$yrsmarr,affairs_m$naffairs)
+```
+
+```{r}
+plot(affairs_m$age,affairs_m$naffairs)
+```
+
+```{r}
+plot(affairs_m$relig,affairs_m$naffairs)
+```
+
+```{r}
+plot(affairs_m$ratemarr,affairs_m$naffairs)
+```
+
+
+
+### Boxplot
+
+
+```{r}
+boxplot(affairs_m$naffairs~affairs_m$ratemarr,
+        main = "Rate of marriage vs Nbr affairs",
+        col="blue",
+        xlab = "Rate of marriage",
+        ylab = "Number of affairs")
+```
+
+
+
+### Barchart
+
+```{r}
+barplot(table(affairs_m$naffairs), main="Affair distribution")
+```
+
+
+### Line chart
+
+```{r}
+plot(table(affairs_m$naffairs),type="l")
+```
+
+
+### Several plots
+
+
+```{r}
+par(mfrow = c(1, 2))
+plot(affairs_m$age)
+plot(affairs_m$naffairs~affairs_m$age) 
+```
+
+
+
+### Saving charts
+
+
+```{r}
+par(mfrow = c(1, 1))
+
+boxplot(affairs_m$naffairs~affairs_m$ratemarr,
+        main = "Rate of marriage vs Nbr affairs",
+        col="blue",
+        xlab = "Rate of marriage",
+        ylab = "Number of affairs")
+```
+
+```{r}
+dev.copy(png, file = "plot1.png")
+```
+
+
+
+```{r}
+dev.off()
+```
+
+
+
+## Ggplot2 ([ggplot2](http://ggplot2.org/))
+
+```{r}
+library(ggplot2)
+```
+
+
+```{r}
+p <- ggplot(mtcars, aes(x=wt, y=mpg)) + geom_point()
+p
+```
+
+
+```{r}
+# Lines and points together
+ggplot(pressure, aes(x=temperature, y=pressure)) + geom_line() + geom_point()
+```
+
+
+```{r}
+ggplot(BOD, aes(x=Time, y=demand)) + geom_bar(stat="identity")
+```
+
+```{r}
+ggplot(ToothGrowth, aes(x=supp, y=len)) + geom_boxplot()
+```
+
+
+```{r}
+#Logistic function
+myfun <- function(xvar) {
+  1/(1 + exp(-xvar + 10))
+}
+
+#Base R
+curve(myfun(x), from=0, to=20)
+```
+
+```{r}
+#Ggplot2
+ggplot(data.frame(x=c(0, 20)), aes(x=x)) + stat_function(fun=myfun, geom="line")
+```
+
+
+
+
+
+
