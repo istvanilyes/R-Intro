@@ -7,7 +7,7 @@ output:
     highlight: kate
 ---
 
-```{r setup, include=TRUE}
+```{r setup, echo=FALSE,include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
