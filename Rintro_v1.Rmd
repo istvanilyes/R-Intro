@@ -184,14 +184,18 @@ f <- c(TRUE,TRUE,TRUE,FALSE)
 mydata <- data.frame(d,e,f)
 names(mydata) <- c("ID","Color","Passed") # variable names
 
-mydata[,2:3] # columns 2,3,4 of data frame
+# Get columns from data frame
+
+mydata[,2:3] # columns 2,3 of data frame
+
+# Get rows from data frame
+mydata[1:2,]
 ```
 
 
 ```{r}
 mydata[c("ID","Color")] # columns ID and Age from data frame
 ```
-
 
 
 ```{r}
@@ -265,20 +269,54 @@ load(file = "affairs.RData")
 ```
 
 
+Exploratory Data Analysis
+=========================================
+
+
+### dplyr package
+
+
+* Seven basic commands: 
+<b><p style="color:red">filter: filter rows by conditions</p>
+<p style="color:red">slice: filter rows by index</p>
+<p style="color:red">select: select columns</p>
+<p style="color:red">arrange: sort rows</p>
+<p style="color:red">mutate: create new variables</p>
+<p style="color:red">summarise: create aggregations</p>
+<p style="color:red">group_by: group by certain variables</p></b>
+* Joins: inner join, left join, right join, full join 
+* Window functions
+
+
+### Pipe operator
+* We need to use tons of parentheses in R to perform multiple operations in one command
+* We can chain these operations one after another with the pipe operator:
+<p style="color:red">%>%</p>
+
+
+
+
 ## What's in our data: basic exploring
 
-
-```{r}
-str(affairs_full)
+```{r message=FALSE}
+library(dplyr)
 ```
 
 
 ```{r}
-head(affairs_full,5)
+#str(affairs_full)
+affairs_full %>% str()
+```
+
+
+```{r}
+#head(affairs_full,5)
+affairs_full %>% head(5)
 ```
 
 ```{r}
-tail(affairs_full,5)
+#tail(affairs_full,5)
+affairs_full %>% tail(5)
 ```
 
 
@@ -295,48 +333,53 @@ tail(affairs_full,5)
 
 
 ```{r}
-affairs1 <- affairs_full[,1:9] #Keep columns from 1st to 9th
-head(affairs1,5)
+#Keep columns from 1st to 9th
+#affairs2 <- affairs_full[,c(1,10)]
+affairs1 <- affairs_full %>% select(1:9)
+affairs1 %>% head(5)
 ```
 
 
 
 ```{r}
-affairs2 <- affairs_full[,c(1,10)] #Keep columns from 1st to 9th
-head(affairs2,5)
+#Version 1: Keep only the ID columns and the number of affairs
+#affairs2 <- affairs_full[,c(1,10)] 
+affairs2 <- affairs_full %>% select(1,10)
+affairs2 %>% head(5)
 ```
 
 
 
 ```{r}
-affairs2 <- affairs_full[,c("id","naffairs")] #Keep the id column and number of affairs
-head(affairs2,5)
-```
-
-
-```{r}
-affairs_full[,"naffairs"] #Keep number of affairs column
+#Version2: Keep only the ID columns and the number of affairs
+#affairs2 <- affairs_full[,c("id","naffairs")] 
+affairs2 <- affairs_full %>% select("id","naffairs")
+affairs2 %>% head(5)
 ```
 
 
 
 ```{r}
-affairs_junk <- affairs_full[1:10,1:2] #Keep the first 10 rows and first 2 columns
-
+# Keep the first 10 rows and first 2 columns
+#affairs_junk <- affairs_full[1:10,1:2] 
+affairs_junk <- affairs_full %>% select(1:10) %>% slice(1:2) 
 
 #Conditional
-affairs_junk <- affairs_full[(affairs_full$relig <= 3 & affairs_full$occup >=2),]  #conditional subsetting with and condition
-head(affairs_full[(affairs_full$relig <= 3 | affairs_full$occup >=2),],5)  #conditional subsetting with or condition
+#affairs_junk <- affairs_full[(affairs_full$relig <= 3 & affairs_full$occup >=2),]
+affairs_junk <- affairs_full %>% filter(relig<=3, occup >= 2)
+
+# alternatively
+affairs_junk <- affairs_full %>% filter(relig<=3 & occup >= 2)
+
+# "or" condition instead of "and" condition
+affairs_junk <- affairs_full %>% filter(relig<=3 | occup >= 2)
 ```
 
 
 
 ```{r}
-head(affairs_full[which(affairs_full$relig <= 3),],5) #which function stores the indices where the statement is true
-```
-
-```{r}
-head(subset(affairs_full, relig <= 3 | occup >=2, select=c(id, ratemarr)),5) #subset function is the easiest way
+# Use the "in" statement
+affairs_junk <- affairs_full %>% filter(occup %in% c(4,6,7))
 ```
 
 
@@ -344,13 +387,24 @@ head(subset(affairs_full, relig <= 3 | occup >=2, select=c(id, ratemarr)),5) #su
 
 
 ```{r}
-affairs_full[duplicated(affairs_full),]
+# Check for duplicated values
+#nrow(affairs_full[duplicated(affairs_full),])
+affairs_full %>% duplicated() %>% sum()
 ```
-
 
 ```{r}
-#affairs_full <- affairs_full[!duplicated(affairs_full),]
+#affairs_dup <- rbind(affairs_full,affairs_full[1,])
+affairs_dup <- affairs_full %>% slice(1) %>% rbind(affairs_full)
+affairs_dup %>% duplicated() %>% sum()
 ```
+
+```{r}
+# Drop duplicated values
+#affairs_non_dup<- affairs_dup[!duplicated(affairs_dup),]
+affairs_non_dup <- affairs_dup %>% distinct(,.keep_all= TRUE)
+affairs_non_dup %>% dim()
+```
+
 
 
 ## Joining datasets
@@ -358,70 +412,85 @@ affairs_full[duplicated(affairs_full),]
 
 
 ```{r}
-affairs_small <- rbind(head(affairs_full,20),affairs_full[120:142,]) #append datasets
+# Base R commands
+#append datasets
+#affairs_small <- rbind(head(affairs_full,20),affairs_full[120:142,])
+affairs_small <- affairs_full %>% 
+  head(20) %>%
+  rbind(affairs_full %>% slice(120:142))
 
-affairs_m0 <- cbind(affairs1,affairs2) #simple join
 
-affairs_m <- merge(affairs1,affairs2,by.x = "id", by.y = "id") 
+# Simple join
+#affairs_m0 <- cbind(affairs1,affairs2)
+affairsm0 <- affairs1 %>% cbind(affairs2)
+
+# Merge command
+#affairs_m <- merge(affairs1,affairs2,by.x = "id", by.y = "id") 
+affairs_m <- affairs1 %>% merge(affairs2,by.x = "id", by.y = "id") 
 ```
 
+```{r}
+# Dplyr type joins
+affairs_m2 <- affairs1 %>% full_join(affairs2, by = c("id" = "id"))
+affairs_m2 <- affairs1 %>% inner_join(affairs2, by = c("id" = "id"))
+affairs_m2 <- affairs1 %>% left_join(affairs2, by = c("id" = "id"))
+affairs_m2 <- affairs1 %>% right_join(affairs2, by = c("id" = "id"))
+```
+
+#### For futher info about dplyr joins:
+* https://medium.com/@HollyEmblem/joining-data-with-dplyr-in-r-874698eb8898
+* https://stat545.com/bit001_dplyr-cheatsheet.html
 
 
 
-## Manupulating variables
+## Manipulating variables
 
 
 ### Creating new variables
 
 ```{r}
-affairs_m$ln_age=log(affairs_m$age)
+#affairs_m$ln_age=log(affairs_m$age)
+affairs_m <- affairs_m %>% mutate(
+  ln_age = log(age),
+  age_25 = age-25
+  )
 ```
 
 
 ### Creating new variables with aggregation
 ```{r}
 #Aggregation
-avg_affairs <-aggregate(affairs_m$naffairs, by=list(affairs_m$occup), FUN=mean, na.rm=TRUE)
-avg_affairs
+affairs_m <- affairs_m %>% group_by(occup) %>% mutate(mean_aff = sum(naffairs, na.rm=TRUE))
 ```
-
-
-
-```{r}
-sum_affairs <-aggregate(affairs_m$naffairs, by=list(affairs_m$occup), FUN=sum, na.rm=TRUE)
-sum_affairs
-```
-
-
-```{r}
-affairs_m$avg_affairs <- ave(affairs_m$naffairs, affairs_m$occup)
-head(affairs_m,10)
-```
-
-
-#### If we want to add several type of aggregated variables to the dataset, it is recommended to use the data.table package. It also has other benefits, see [here](https://www.r-bloggers.com/intro-to-the-data-table-package/)
 
 
 ### Creating category variable
 
 ```{r}
-#attach(affairs_m)
-#detach(affairs_m)
 
-affairs_m$relig2[affairs_m$relig==1] <- 5
-affairs_m$relig2[affairs_m$relig==2] <- 4
-affairs_m$relig2[affairs_m$relig==3] <- 3
-affairs_m$relig2[affairs_m$relig==4] <- 2
-affairs_m$relig2[affairs_m$relig==5] <- 1
+affairs_m <- affairs_m %>% mutate(
+  relig2 = case_when(
+    relig==1 ~ 5,
+    relig==2 ~ 4,
+    relig==3 ~ 3,
+    relig==4 ~ 2,
+    relig==5 ~ 1)
+)
 
 
 # Using ifelse statements like excel's if function
-affairs_m$relig3 <- ifelse(affairs_m$relig>=4,"Strongly religous",ifelse(affairs_m$relig==3,"Slightly religous","Not religous"))
+affairs_m <- affairs_m %>% mutate(
+  relig3 = ifelse(relig>=4,"Strongly religous",
+                  ifelse(relig==3,"Slightly religous",
+                         "Not religous"))
+)
 
 # Creating factor from continuous variable
-affairs_m$age2 <- cut(affairs_m$age,breaks=c(10,30,40,50,60))
+affairs_m <- affairs_m %>% mutate(
+ age2 =  cut(age,breaks=c(10,30,40,50,60))
+)
 
-head(affairs_m,10)
+affairs_m %>% as.data.frame() %>% head(10)
 ```
 
 
@@ -447,15 +516,25 @@ if("Truth" %in% x) {
 
 ```{r}
 for(level in unique(affairs_m$occup)){
-  affairs_m[paste("dummy", level, sep = "_")] <- ifelse(affairs_m$occup == level, 1, 0)
+  affairs_m[paste("occup", level, sep = "_")] <- ifelse(affairs_m$occup == level, 1, 0)
 }
 head(affairs_m,5)
+```
+
+```{r}
+library(sjmisc)
+
+affairs_m %>% 
+  to_dummy(occup,var.name="occup",suffix="label") %>%
+  bind_cols(affairs_m) %>%
+  select(colnames(affairs_m),everything()) %>%
+  head()
 ```
 
 
 
 
-## Loops
+## For loop
 
 
 #### It is automating a multi-step process by organizing sequences of actions.
@@ -499,26 +578,7 @@ apply(affairs_m["ratemarr"], 2, function(x) length(x[x<=2]))
 
 ##### we want to go through on a vector: apply a function on all points (we can do this also on list)
 
-
 ```{r}
-#sapply will return a vector
-head(sapply(affairs_m["ratemarr"], function(x) x^2),5)
-```
-
-
-
-```{r}
-affairs_m$ratemarr_sq1 <- sapply(affairs_m["ratemarr"], function(x) x^2)
-
-#lapply will return a list
-head(lapply(affairs_m["ratemarr"], function(x) x^2),5)
-```
-
-
-```{r}
-affairs_m$ratemarr_sq2 <- lapply(affairs_m["ratemarr"], function(x) x^2)
-
-
 #but we can get a list also with sapply
 sapply(1:3, function(x) x^2, simplify=FALSE)
 ```
@@ -526,7 +586,7 @@ sapply(1:3, function(x) x^2, simplify=FALSE)
 
 ```{r}
 #or we can get a vector also with lapply
-unlist(lapply(1:3, function(x) x^2))
+lapply(1:3, function(x) x^2) %>% unlist()
 ```
 
 
@@ -537,49 +597,46 @@ unlist(lapply(1:3, function(x) x^2))
 
 ```{r}
 #Get column names
-names(affairs_m) #This is a character vector
+affairs_m %>% names() #This is a character vector
 ```
 
 
 ```{r}
-data.frame("Names"=names(affairs_m)) #This is a data frame, nicer format, but occupy bigger space
+affairs_m %>% names() %>% data.frame() #This is a data frame, nicer format, but occupy bigger space
 ```
 
 
 ```{r}
 #Get the number of columns and rows
-ncol(affairs_m)
+affairs_m %>% ncol()
 ```
 
 
 ```{r}
-nrow(affairs_m)
+affairs_m %>% nrow()
 ```
 
 ```{r}
 #sorting: ascending, descending
-head(sort(affairs_m$age),5)                     #basic sortin
+affairs_m %>% arrange(age) %>% data.frame() %>% head()  #basic sortin
 ```
 
 
 
 ```{r}
-head(sort(affairs_m$age, decreasing=TRUE),5)    #sorting decreasing
+affairs_m %>% arrange(desc(age)) %>% data.frame() %>% head()   #sorting decreasing
 ```
 
 
 ```{r}
-head(sort(affairs_m$age, na.last=TRUE),5)       #put missing values to the end
+#order all data frame according to var 1
+affairs_m <- affairs_m %>% arrange(desc(age))       
 ```
 
 
 ```{r}
-head(affairs_m[order(affairs_m$age),1:(ncol(affairs_m)-1)],5)        #order all data frame according to var 1
-```
-
-
-```{r}
-head(affairs_m[order(affairs_m$age, affairs_m$relig),1:(ncol(affairs_m)-1)],5)    #ordering with more variables
+# ordering with more than 1 variables
+affairs_m %>% arrange(desc(age),educ) %>% data.frame() %>% head() 
 ```
 
 
@@ -619,7 +676,15 @@ xt
 ```
 
 
-
+```{r}
+affairs_m %>%
+  group_by(male, kids) %>%
+  summarize(nbr = n(),
+            total = sum(naffairs, na.rm = TRUE),
+            mean = mean(naffairs, na.rm = TRUE),
+            median = median(naffairs, na.rm = TRUE),
+            max = max(naffairs, na.rm = TRUE))
+```
 
 
 
@@ -627,7 +692,7 @@ xt
 
 
 ```{r}
-head(summary(affairs_m),5) #all variables
+summary(affairs_m) %>% head(5) #all variables
 ```
 
 
@@ -694,25 +759,9 @@ Visualisations
 hist(affairs_m$age)
 ```
 
-```{r}
-with(affairs_m, hist(age))
-```
-
 
 
 ### Scatterplot
-
-```{r}
-plot(affairs_m$yrsmarr,affairs_m$naffairs)
-```
-
-```{r}
-plot(affairs_m$age,affairs_m$naffairs)
-```
-
-```{r}
-plot(affairs_m$relig,affairs_m$naffairs)
-```
 
 ```{r}
 plot(affairs_m$ratemarr,affairs_m$naffairs)
@@ -749,7 +798,6 @@ plot(table(affairs_m$naffairs),type="l")
 
 ### Several plots
 
-
 ```{r}
 par(mfrow = c(1, 2))
 plot(affairs_m$age)
@@ -761,55 +809,104 @@ plot(affairs_m$naffairs~affairs_m$age)
 ### Saving charts
 
 
-```{r}
-par(mfrow = c(1, 1))
-
-boxplot(affairs_m$naffairs~affairs_m$ratemarr,
-        main = "Rate of marriage vs Nbr affairs",
-        col="blue",
-        xlab = "Rate of marriage",
-        ylab = "Number of affairs")
-```
-
-```{r}
+```{r results="hide"}
 dev.copy(png, file = "plot1.png")
-```
-
-
-
-```{r}
+# Insert the code of the chart here
 dev.off()
 ```
 
 
 
+
 ## Ggplot2 ([ggplot2](http://ggplot2.org/))
 
-```{r}
+```{r warning=FALSE}
 library(ggplot2)
 ```
 
+### Histogram
 
 ```{r}
-p <- ggplot(mtcars, aes(x=wt, y=mpg)) + geom_point()
-p
+affairs_m %>%
+  ggplot(aes(age)) +
+  geom_histogram(bins=20)
+```
+
+### Scatterplot
+
+```{r warning=FALSE}
+affairs_m %>% 
+  ggplot(aes(x=educ, y=age)) + 
+  geom_point() 
 ```
 
 
-```{r}
-# Lines and points together
-ggplot(pressure, aes(x=temperature, y=pressure)) + geom_line() + geom_point()
+```{r warning=FALSE}
+affairs_m %>% 
+  ggplot(aes(x=educ, y=age, color=naffairs)) + 
+  geom_point(shape = 16, size = 5) +
+  labs(x="Education",y="Age")+
+  theme(axis.title = element_text(face="bold",size=14))
 ```
 
 
-```{r}
-ggplot(BOD, aes(x=Time, y=demand)) + geom_bar(stat="identity")
+```{r warning=FALSE}
+affairs_m %>% 
+  ggplot(aes(x=educ, y=age, color=naffairs)) + 
+  geom_smooth(method = "loess", se=FALSE, color="red")+
+  geom_smooth(method = "lm", se=FALSE, color="forestgreen")+
+  geom_point(shape = 16, size = 5) +
+  labs(x="Education",y="Age")+
+  theme(axis.title = element_text(face="bold",size=14))
 ```
 
-```{r}
-ggplot(ToothGrowth, aes(x=supp, y=len)) + geom_boxplot()
+
+### Barchart
+
+```{r warning=FALSE}
+affairs_m %>% group_by(naffairs) %>% summarize(count=n()) %>% data.frame() %>%
+  ggplot(aes(x=naffairs, y=count)) + 
+    geom_bar(stat="identity")
 ```
 
+
+```{r warning=FALSE}
+affairs_m %>% group_by(naffairs) %>% summarize(count=n()) %>% data.frame() %>%
+  ggplot(aes(x=naffairs, y=count)) + 
+    geom_bar(stat="identity") +
+    coord_flip()
+```
+
+### Line chart
+
+```{r}
+affairs_m %>% group_by(naffairs) %>% summarize(count=n()) %>% data.frame() %>%
+  ggplot(aes(x=naffairs, y=count)) + 
+    geom_line(stat="identity")
+```
+
+### Box plot
+```{r}
+affairs_m %>% 
+  ggplot(aes(y=naffairs, group=ratemarr)) + 
+  geom_boxplot()
+```
+
+```{r warning=FALSE}
+library(ggthemes)
+affairs_m %>% 
+  ggplot(aes(y=naffairs, group=ratemarr)) + 
+  geom_boxplot(outlier.colour="red",fill="tomato1") +
+  labs(title="Rate of marriage vs Nbr affairs",
+       x="Rate of marriage", 
+       y = "Number of affairs")+
+  theme_economist()+
+  theme(axis.text=element_text(size=16),
+        axis.title=element_text(size=18,face="bold"),
+        plot.title=element_text(size=22,face = "bold"))
+```
+
+### Visualize functions
 
 ```{r}
 #Logistic function
@@ -823,11 +920,15 @@ curve(myfun(x), from=0, to=20)
 
 ```{r}
 #Ggplot2
-ggplot(data.frame(x=c(0, 20)), aes(x=x)) + stat_function(fun=myfun, geom="line")
+data.frame(x=c(0, 20)) %>% 
+  ggplot(aes(x=x)) + 
+  stat_function(fun=myfun, geom="line")
 ```
 
 
-
+#### For further info about ggplot, check out this page:
+* http://r-statistics.co/Complete-Ggplot2-Tutorial-Part1-With-R-Code.html
+* http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html
 
 
 
