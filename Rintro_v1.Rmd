@@ -233,12 +233,12 @@ data(mtcars) #loading a specific built-in dataset
 #### Other sources:
 
 ```{r}
-?read.csv
+#?read.csv
 ```
 
 
 ```{r}
-?read.table
+#?read.table
 ```
 
 #### Loading Stata files:
@@ -396,6 +396,7 @@ affairs_full %>% duplicated() %>% sum()
 #affairs_dup <- rbind(affairs_full,affairs_full[1,])
 affairs_dup <- affairs_full %>% slice(1) %>% rbind(affairs_full)
 affairs_dup %>% duplicated() %>% sum()
+affairs_dup %>% group_by_all() %>% filter(n()>1)
 ```
 
 ```{r}
@@ -748,6 +749,12 @@ cor.test(affairs_m$naffairs,affairs_m$age)[[1]] #get t statistics of the test
 cor.test(affairs_m$naffairs,affairs_m$age)[[3]] #get p value of the test
 ```
 
+```{r}
+library(corrplot)
+affairs_m[,c("age","yrsmarr","educ")] %>% cor() %>% corrplot(method='circle')
+
+```
+
 Visualisations 
 =====================================
 
@@ -925,6 +932,51 @@ data.frame(x=c(0, 20)) %>%
   stat_function(fun=myfun, geom="line")
 ```
 
+
+### Visualize elephant
+
+* https://perfdynamics.blogspot.com/2011/06/winking-pink-elephant.html
+
+
+```{r warning=FALSE,echo=FALSE, message=FALSE}
+library(MASS)
+
+param <- c(50-30i,18+8i,12-10i,-14-60i,1+20i)
+parar <- param * exp(1i*pi/2)  #rotate by 90 degrees
+
+fourier <- function(tt,cc) {
+ wt <- rep(0, length(tt)) 
+ fsum <- function(n) {
+   if (n > 0) wt <- wt + fsum(n-1) + Re(cc[n]) * cos(n*tt) + Im(cc[n]) * sin(n*tt)
+   return(wt)
+ }
+ fsum(length(cc))
+}
+
+pinky <- function() {
+  Cx <- as.complex(rep(0,length(param)))
+  Cy <- as.complex(rep(0,length(param))) 
+  tv <- seq(0,2*pi,length=1000)
+  
+  for (i in 1:2) { #movie frames
+    Cx[1] <- parar[1] + Im(param[1])
+    Cx[2] <- parar[2] + Im(param[2])
+    Cx[3] <- Re(param[3])
+    Cx[4] <- Re(param[5]) - (i-1)
+    Cx[5] <- Re(param[4])
+    Cy[1] <- param[1] - Re(param[1]) + Im(param[4])
+    Cy[2] <- param[2] - Re(param[2])
+    Cy[3] <- param[3] - Re(param[3])
+    x <- c(fourier(tv, Cx))
+    y <- c(fourier(tv, Cy))
+    plot(y, -x, type="l", col='red', lwd=10, axes=FALSE, ylab='', xlab='')
+    lines(y, -x, type="l", col='pink', lwd=4)
+    if (i > 1) points(Im(param[5]), Im(param[5]), col='black', pch=126, cex=2)
+    else points(Im(param[5]), Im(param[5]), col='black', pch=20, cex=2)
+  }
+}
+pinky()
+```
 
 #### For further info about ggplot, check out this page:
 * http://r-statistics.co/Complete-Ggplot2-Tutorial-Part1-With-R-Code.html
